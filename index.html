@@ -89,7 +89,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
     <span class="sub">Haishokuban</span>
   </div>
   <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
-  <p class="ver">v0.8 / ATS 社内用</p>
+  <p class="ver">v0.9 / ATS 社内用</p>
 </header>
 
 <section id="step1">
@@ -160,8 +160,15 @@ const PRESET_RAW = {
   'カシワ':           ['カシワ','カシワ2','カシワA','カシワ巡回'],
   'ユリシス':         ['ユリシス','ユリシスAD','ユリシスD','ユリシスST'],
   'アンシェル':       ['アンシェル','アンシェル2'],
-  '興和':             ['興和(夜)','興和A(夜)']
+  '興和':             ['興和(夜)','興和A(夜)'],
+  // ↓ イベント現場（行く人が決まっているので色分けしない）
+  'クロスライン':     ['クロス'],
+  'ポータル':         ['ポータル'],
+  'JHN':              ['JHN']
 };
+
+// イベント現場の会社：色分けの対象から外す（行く人が決まっているため不要）
+const EVENT_CLIENTS = new Set(['JHN', 'クライムアップ', 'クロスライン', 'ユリシス', 'ポータル']);
 
 const HUES = [0, 30, 55, 100, 150, 195, 220, 270, 310, 340];
 const LIGHTNESS_STEPS = [86, 76, 66, 56];
@@ -209,8 +216,9 @@ let zip = null;             // 現在のJSZip
 let sheetMap = {};          // シート名 → xl/worksheets/sheetN.xml
 let monthSheetNames = [];   // ['202604', ...]
 let sharedStrings = [];
-let colorPlan = null;       // { 現場名: {client,hue,lightness,hex,argb} }
+let colorPlan = null;       // { 現場名: {client,hue,lightness,hex,argb} } ← 表示中の月のぶん
 let colorMode = 'gradient'; // 'gradient'（会社でまとめる）| 'vivid'（現場をくっきり）
+let hueOf = {};             // { 会社名: 色相 } ← 年間で固定（月をまたいでも色を一定に）
 let currentSheetName = null;
 let currentSites = [];
 let unmapped = [];
@@ -356,27 +364,28 @@ function resolveMappings(sites) {
   return { byClient, unmapped: unmappedArr };
 }
 
-function buildColorPlan(byClient, mode) {
+// その月の色プランを作る。
+// - その月で2現場以上ある会社だけ色をつける（1現場は色なし）
+// - イベント会社は除外
+// - gradient: 色相は年間固定(hueOf)、同じ会社内は明度の濃淡。明度下限は60までに抑え黒文字が読めるように
+// - vivid: 同じ会社の現場ごとに色相を大きく変える
+function buildColorPlan(byClient, mode, hueMap) {
   const plan = {};
-  const multi = Object.entries(byClient).filter(([, s]) => s.length >= 2);
-  multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
-  const M = multi.length;
-  multi.forEach(([client, sites], idx) => {
+  const multi = Object.entries(byClient).filter(([c, s]) => s.length >= 2 && !EVENT_CLIENTS.has(c));
+  multi.forEach(([client, sites]) => {
     const sorted = [...sites].sort((a, b) => a.localeCompare(b, 'ja'));
     const N = sorted.length;
-    const baseHue = M > 0 ? Math.round((360 / M) * idx) : 0;
     sorted.forEach((site, i) => {
       let hue, sat, l;
       if (mode === 'vivid') {
-        // くっきり：同じ会社の現場ごとに色相を大きく変える。別会社で色が被るのは許容（会社名で区別できる）
         hue = VIVID_HUES[i % VIVID_HUES.length];
         sat = VIVID_SAT;
         l = VIVID_LIGHT;
       } else {
-        // 会社でまとめる：会社ごとに色相を等分、同じ会社内は明度の濃淡で区別
-        hue = baseHue;
+        hue = (hueMap && hueMap[client] !== undefined) ? hueMap[client] : 0;
         sat = SATURATION;
-        l = N === 1 ? 72 : Math.round(80 - (30 * i / (N - 1)));
+        // 78→60の範囲。濃い側を60で止めて、どの濃さでも黒文字が読めるようにする
+        l = N === 1 ? 70 : Math.round(78 - (18 * i / (N - 1)));
       }
       plan[site] = { client, hue, lightness: l, hex: hslToHex(hue, sat, l), argb: hslToARGB(hue, sat, l) };
     });
@@ -384,18 +393,30 @@ function buildColorPlan(byClient, mode) {
   return plan;
 }
 
-// ============================================================
-// 全月シートに色付け（JSZip直接書き換え）
-// ============================================================
-async function processAllMonthSheets() {
-  // 全シートから現場名収集
+// 年間で会社ごとの色相を決める（月をまたいでも色を一定にするため）
+async function computeAnnualHues() {
   const allSet = new Set();
   for (const name of monthSheetNames) {
     for (const s of await extractSites(name)) allSet.add(s);
   }
-  const allSites = [...allSet].sort((a, b) => a.localeCompare(b, 'ja'));
-  const resolved = resolveMappings(allSites);
-  colorPlan = buildColorPlan(resolved.byClient, colorMode);
+  const resolved = resolveMappings([...allSet]);
+  // 年間で2現場以上 かつ イベントでない会社だけが色相を持つ
+  const clients = Object.entries(resolved.byClient)
+    .filter(([c, s]) => s.length >= 2 && !EVENT_CLIENTS.has(c))
+    .map(([c]) => c)
+    .sort((a, b) => a.localeCompare(b, 'ja'));
+  const map = {};
+  const M = clients.length;
+  clients.forEach((c, i) => { map[c] = M > 0 ? Math.round((360 / M) * i) : 0; });
+  return map;
+}
+
+// ============================================================
+// 全月シートに色付け（JSZip直接書き換え）
+// ============================================================
+async function processAllMonthSheets() {
+  // 年間で会社ごとの色相を確定（月をまたいでも色を一定に）
+  hueOf = await computeAnnualHues();
 
   // styles.xml 解析
   let stylesXml = await zip.file('xl/styles.xml').async('string');
@@ -425,7 +446,10 @@ async function processAllMonthSheets() {
     newXfs.push(nx); xfCache[key] = ns; return ns;
   }
 
+  // 各月シートを、その月の色プランで塗る
   for (const name of monthSheetNames) {
+    const monthResolved = resolveMappings(await extractSites(name));
+    const monthPlan = buildColorPlan(monthResolved.byClient, colorMode, hueOf);
     const path = sheetMap[name];
     let xml = await zip.file(path).async('string');
     xml = xml.replace(/<c r="([A-Z]+)(\d+)"([^>]*?)(\/>|>([\s\S]*?)<\/c>)/g,
@@ -438,8 +462,8 @@ async function processAllMonthSheets() {
           if (v) site = sharedStrings[parseInt(v[1])];
         }
         if (site) site = site.trim();
-        // colorPlanにある→その色、それ以外（未マッピング/SKIP/空）→クリア
-        const argb = (site && colorPlan[site]) ? colorPlan[site].argb : null;
+        // その月の色プランにある→その色、それ以外（1現場/イベント/未マッピング/SKIP/空）→クリア
+        const argb = (site && monthPlan[site]) ? monthPlan[site].argb : null;
         const sM = attrs.match(/s="(\d+)"/);
         const origS = sM ? parseInt(sM[1]) : 0;
         const fillId = getFillId(argb);
@@ -500,6 +524,8 @@ async function previewSheet(name) {
   currentSites = await extractSites(name);
   const resolved = resolveMappings(currentSites);
   unmapped = resolved.unmapped;
+  // 表示中の月の色プラン（その月で複数現場の会社だけ・イベント除外）
+  colorPlan = buildColorPlan(resolved.byClient, colorMode, hueOf);
   renderStep3(resolved);
   document.getElementById('step3').hidden = false;
 }
@@ -507,8 +533,8 @@ async function previewSheet(name) {
 function renderStep3(resolved) {
   const total = currentSites.length;
   const colored = currentSites.filter(s => colorPlan[s]).length;
-  const noColor = Object.entries(resolved.byClient).filter(([, s]) => s.length < 2).reduce((a, [, s]) => a + s.length, 0);
   const unmappedCount = unmapped.length;
+  const noColor = total - colored - unmappedCount;  // 1現場・イベント等で色がつかない現場
 
   document.getElementById('statRow').innerHTML = `
     <div class="stat"><div class="lbl">TOTAL</div><div class="num">${total}</div></div>
@@ -558,8 +584,9 @@ function renderStep3(resolved) {
 }
 
 function renderPreview(resolved) {
-  const multi = Object.entries(resolved.byClient).filter(([, s]) => s.length >= 2);
-  const single = Object.entries(resolved.byClient).filter(([, s]) => s.length < 2);
+  // 色がつくのは「複数現場 かつ イベントでない」会社だけ
+  const multi = Object.entries(resolved.byClient).filter(([c, s]) => s.length >= 2 && !EVENT_CLIENTS.has(c));
+  const single = Object.entries(resolved.byClient).filter(([c, s]) => s.length < 2 || EVENT_CLIENTS.has(c));
   multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
 
   let html = '<h4 style="font-size:0.9rem;font-weight:500;margin:0.5rem 0">色付け対象（1社で複数現場）</h4>';
@@ -578,8 +605,11 @@ function renderPreview(resolved) {
     html += '</tbody></table>';
   }
   if (single.length > 0) {
-    html += `<h4 style="font-size:0.9rem;font-weight:500;margin:1rem 0 0.5rem">色なし（1社1現場）</h4>`;
-    html += `<p style="font-size:0.85rem;color:var(--sub)">${single.map(([c, s]) => escapeHtml(s[0]) + '（' + escapeHtml(c) + '）').join('、')}</p>`;
+    html += `<h4 style="font-size:0.9rem;font-weight:500;margin:1rem 0 0.5rem">色なし（その月1現場・イベント現場）</h4>`;
+    html += `<p style="font-size:0.85rem;color:var(--sub)">${single.map(([c, sites]) => {
+      const label = EVENT_CLIENTS.has(c) ? '（' + escapeHtml(c) + '・イベント）' : '（' + escapeHtml(c) + '）';
+      return [...sites].sort((a,b)=>a.localeCompare(b,'ja')).map(escapeHtml).join('・') + label;
+    }).join('、')}</p>`;
   }
   if (multi.length > 20) {
     html += `<p style="color:var(--accent);font-size:0.85rem;margin-top:1rem">⚠ 取引先が${multi.length}社あり、色相が近接して見分けにくくなる場合があります。</p>`;
