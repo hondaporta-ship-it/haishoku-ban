@@ -89,7 +89,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
     <span class="sub">Haishokuban</span>
   </div>
   <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
-  <p class="ver">v0.10 / ATS 社内用</p>
+  <p class="ver">v0.11 / ATS 社内用</p>
 </header>
 
 <section id="step1">
@@ -107,7 +107,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
   <div class="step"><span class="step-no">STEP 02</span><h2>色の付け方を選ぶ</h2></div>
   <div class="mode-box">
     <label class="mode-opt"><input type="radio" name="colorMode" value="balanced" checked>
-      <span><strong>いいとこ取り（おすすめ）</strong><br><span class="mode-desc">同じ会社の中も色を変えつつ、別会社とも被りにくく。中村Aは青紫、中村A2は紫…と少しずつ変化</span></span></label>
+      <span><strong>いいとこ取り（おすすめ）</strong><br><span class="mode-desc">現場が多い会社ほど黄・緑（目立つ色）、少ない会社はピンク寄り。シフト表の地色に埋もれず、全現場が違う色</span></span></label>
     <label class="mode-opt"><input type="radio" name="colorMode" value="gradient">
       <span><strong>会社でまとめる</strong><br><span class="mode-desc">同じ会社は同系色の濃淡。例：中村系はぜんぶ紫の濃い・薄い</span></span></label>
     <label class="mode-opt"><input type="radio" name="colorMode" value="vivid">
@@ -377,15 +377,18 @@ function buildColorPlan(byClient, mode, hueMap) {
   multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
 
   if (mode === 'balanced') {
-    // いいとこ取り：その月の全現場を会社順→会社内順に並べ、色相環(360°)を均等割り。
-    // 同じ会社は隣り合う色相に固まる（系統が残る）／別会社とも色相がずれる（被りにくい）／全現場が必ず違う色。
+    // いいとこ取り：現場数が多い会社ほど目立つ色（黄〜緑）、少ない会社ほど埋もれる色（紫〜ピンク）。
+    // シフト表の地色（ピンク/紫の固定行・タブ）に対し、色をいっぱい使う会社を浮き上がらせる狙い。
+    // 色相は黄(60)→ピンク(350)の一方向。背景に埋もれやすい赤・オレンジ(0〜60)は使わない。
+    const byCount = [...multi].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'ja'));
     const all = [];
-    multi.forEach(([client, sites]) => {
+    byCount.forEach(([client, sites]) => {
       [...sites].sort((a, b) => a.localeCompare(b, 'ja')).forEach(site => all.push({ client, site }));
     });
     const T = all.length;
+    const START = 60, RANGE = 290;
     all.forEach((o, gi) => {
-      const hue = T > 0 ? Math.round((360 / T) * gi) : 0;
+      const hue = T > 1 ? Math.round(START + RANGE * gi / (T - 1)) : START;
       const sat = 62, l = 72;
       plan[o.site] = { client: o.client, hue, lightness: l, hex: hslToHex(hue, sat, l), argb: hslToARGB(hue, sat, l) };
     });
