@@ -9,20 +9,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
 :root{
-  --bg:#f7f5ef;
-  --paper:#ffffff;
-  --ink:#1a1a1a;
-  --sub:#6b6b6b;
-  --line:#d8d4c8;
-  --line-strong:#a8a39a;
-  --navy:#1E3A8A;
-  --navy-deep:#0f205c;
-  --accent:#b94a3b;
+ --bg:#f7f5ef; --paper:#ffffff; --ink:#1a1a1a; --sub:#6b6b6b;
+ --line:#d8d4c8; --line-strong:#a8a39a;
+ --navy:#1E3A8A; --navy-deep:#0f205c; --accent:#b94a3b;
+ --warn-bg:#fff4e0; --warn-border:#d49a4a; --ok:#1c6b3d;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--ink);font-family:'Zen Kaku Gothic New',sans-serif;font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
 body{padding:2rem 1rem 4rem;min-height:100vh}
-.wrap{max-width:720px;margin:0 auto}
+.wrap{max-width:780px;margin:0 auto}
 header{border-bottom:2px solid var(--ink);padding-bottom:1.5rem;margin-bottom:2.5rem}
 .brand{display:flex;align-items:baseline;gap:0.8rem;flex-wrap:wrap}
 h1{font-size:2.2rem;font-weight:700;letter-spacing:0.04em}
@@ -34,36 +29,58 @@ section[hidden]{display:none}
 .step{display:flex;align-items:baseline;gap:0.7rem;margin-bottom:1rem}
 .step-no{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--navy);font-weight:500;letter-spacing:0.1em}
 h2{font-size:1.15rem;font-weight:500}
-.hint{font-size:0.85rem;color:var(--sub);margin-bottom:1rem;padding:0.6rem 0.8rem;background:var(--bg);border-left:2px solid var(--line-strong)}
 .drop-zone{border:2px dashed var(--line-strong);padding:2rem 1rem;text-align:center;background:var(--bg);transition:all 0.2s}
 .drop-zone.over{border-color:var(--navy);background:#eef1f9}
 .drop-zone p{margin:0.3rem 0;color:var(--sub)}
 input[type=file]{display:none}
-.btn{display:inline-block;background:var(--navy);color:#fff;padding:0.7rem 1.4rem;border:none;cursor:pointer;font-family:inherit;font-size:0.95rem;font-weight:500;letter-spacing:0.02em;transition:background 0.15s}
+.btn{display:inline-block;background:var(--navy);color:#fff;padding:0.8rem 1.5rem;border:none;cursor:pointer;font-family:inherit;font-size:1rem;font-weight:500;letter-spacing:0.02em;transition:background 0.15s}
 .btn:hover{background:var(--navy-deep)}
 .btn:disabled{background:#aaa;cursor:not-allowed}
+.btn.big{font-size:1.1rem;padding:1rem 2rem}
 .btn.ghost{background:transparent;color:var(--navy);border:1px solid var(--navy)}
 .btn.ghost:hover{background:var(--navy);color:#fff}
 select{font-family:inherit;font-size:1rem;padding:0.5rem 0.8rem;border:1px solid var(--line-strong);background:#fff;width:100%;max-width:280px}
-.mapping-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.8rem;margin-bottom:1rem;align-items:center}
-.mapping-grid .lbl{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:500;padding:0.3rem 0;border-bottom:0.5px dotted var(--line)}
+
+.stat-row{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:1rem}
+.stat{background:var(--bg);padding:0.8rem 1rem;flex:1;min-width:120px;border-left:3px solid var(--navy)}
+.stat .lbl{font-size:0.72rem;color:var(--sub);font-family:'JetBrains Mono',monospace;letter-spacing:0.06em}
+.stat .num{font-size:1.6rem;font-weight:500;color:var(--ink);font-family:'JetBrains Mono',monospace;line-height:1.2}
+.stat.warn{border-left-color:var(--warn-border);background:var(--warn-bg)}
+.stat.warn .num{color:var(--accent)}
+
+.preview table{width:100%;border-collapse:collapse;font-size:0.88rem}
+.preview th,.preview td{border:0.5px solid var(--line);padding:0.4rem 0.6rem;text-align:left;vertical-align:top}
+.preview th{background:var(--bg);font-weight:500;font-size:0.8rem;color:var(--sub)}
+.swatch{display:inline-block;width:14px;height:14px;vertical-align:middle;border:0.5px solid var(--line-strong);margin-right:0.3rem}
+
+.unmapped-box{background:var(--warn-bg);border:1px solid var(--warn-border);padding:1rem;margin:1rem 0}
+.unmapped-box h3{font-size:0.95rem;color:var(--accent);font-weight:500;margin-bottom:0.5rem}
+.unmapped-box .desc{font-size:0.85rem;color:var(--sub);margin-bottom:0.8rem;line-height:1.6}
+.mapping-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.8rem;align-items:center}
+.mapping-grid .mk-lbl{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:500}
 .mapping-grid input[type=text]{font-family:inherit;font-size:0.95rem;padding:0.4rem 0.6rem;border:1px solid var(--line);background:#fff;width:100%}
 .mapping-grid input[type=text]:focus{outline:none;border-color:var(--navy)}
-.summary{margin:1rem 0;font-size:0.9rem}
-.summary table{width:100%;border-collapse:collapse;font-size:0.9rem;margin-top:0.5rem}
-.summary th,.summary td{border:0.5px solid var(--line);padding:0.4rem 0.6rem;text-align:left}
-.summary th{background:var(--bg);font-weight:500}
-.summary .swatch{display:inline-block;width:16px;height:16px;vertical-align:middle;border:0.5px solid var(--line-strong);margin-right:0.4rem}
-.actions{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1rem}
-.warn{color:var(--accent);font-size:0.85rem;margin-top:0.5rem}
-.ok{color:#1c6b3d;font-size:0.9rem;margin-top:0.5rem}
+
+.foldable{margin-top:1rem}
+.foldable summary{cursor:pointer;font-size:0.9rem;color:var(--navy);padding:0.5rem 0;user-select:none}
+.foldable summary:hover{color:var(--navy-deep)}
+.foldable[open] summary{margin-bottom:0.8rem}
+
+.actions{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1.5rem;align-items:center}
+
+.toast{position:fixed;top:1rem;right:1rem;background:var(--ink);color:#fff;padding:0.7rem 1.2rem;font-size:0.9rem;z-index:1000;opacity:0;transition:opacity 0.2s;pointer-events:none}
+.toast.show{opacity:1}
+.toast.err{background:var(--accent)}
+
 footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-size:0.75rem;color:var(--sub);text-align:center;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+
 @media (max-width:560px){
-  body{padding:1rem 0.7rem 3rem}
-  h1{font-size:1.7rem}
-  section{padding:1.2rem 1rem}
-  .mapping-grid{grid-template-columns:1fr;gap:0.2rem}
-  .mapping-grid .lbl{border-bottom:none;padding-bottom:0}
+ body{padding:1rem 0.7rem 3rem}
+ h1{font-size:1.7rem}
+ section{padding:1.2rem 1rem}
+ .mapping-grid{grid-template-columns:1fr;gap:0.2rem}
+ .stat-row{gap:0.6rem}
+ .stat{min-width:calc(50% - 0.3rem)}
 }
 </style>
 </head>
@@ -71,335 +88,420 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
 <div class="wrap">
 
 <header>
-  <div class="brand">
-    <h1>配色番</h1>
-    <span class="sub">Haishokuban</span>
-  </div>
-  <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
-  <p class="ver">v0.1 / ATS 社内用</p>
+ <div class="brand">
+ <h1>配色番</h1>
+ <span class="sub">Haishokuban</span>
+ </div>
+ <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
+ <p class="ver">v0.2 / ATS 社内用</p>
 </header>
 
 <section id="step1">
-  <div class="step"><span class="step-no">STEP 01</span><h2>シフト表 Excel を選ぶ</h2></div>
-  <div class="drop-zone" id="drop">
-    <p>ここに Excel ファイル（.xlsx）を<br>ドラッグ&amp;ドロップ</p>
-    <p style="margin:0.8rem 0">または</p>
-    <input type="file" id="fileInput" accept=".xlsx">
-    <label for="fileInput" class="btn">ファイルを選ぶ / Choose File</label>
-  </div>
-  <p id="loadMsg" class="ok" style="display:none"></p>
+ <div class="step"><span class="step-no">STEP 01</span><h2>シフト表 Excel を選ぶ</h2></div>
+ <div class="drop-zone" id="drop">
+ <p>ここに Excel ファイル（.xlsx）を<br>ドラッグ&amp;ドロップ</p>
+ <p style="margin:0.8rem 0">または</p>
+ <input type="file" id="fileInput" accept=".xlsx">
+ <label for="fileInput" class="btn">ファイルを選ぶ / Choose File</label>
+ </div>
 </section>
 
 <section id="step2" hidden>
-  <div class="step"><span class="step-no">STEP 02</span><h2>月を選ぶ</h2></div>
-  <select id="sheetSelect"></select>
+ <div class="step"><span class="step-no">STEP 02</span><h2>月を選ぶ</h2></div>
+ <select id="sheetSelect"></select>
 </section>
 
 <section id="step3" hidden>
-  <div class="step"><span class="step-no">STEP 03</span><h2>各現場の取引先を入力</h2></div>
-  <p class="hint">同じ取引先名を入れた現場どうしが、色相でまとまり、現場ごとに濃淡で区別されます。1社で1現場しかない場合は色は付きません（取引先名は入れても入れなくてもOK）。<br>※前回入力した内容は端末に記憶されています。</p>
-  <div id="mappingList" class="mapping-grid"></div>
-  <div class="actions">
-    <button id="applyBtn" class="btn">色を付ける / Apply Colors</button>
-    <button id="clearBtn" class="btn ghost">入力をすべてクリア</button>
-  </div>
-</section>
+ <div class="step"><span class="step-no">STEP 03</span><h2>確認してダウンロード</h2></div>
+ <div id="statRow" class="stat-row"></div>
 
-<section id="step4" hidden>
-  <div class="step"><span class="step-no">STEP 04</span><h2>ダウンロード</h2></div>
-  <div id="summary" class="summary"></div>
-  <button id="downloadBtn" class="btn">色付き版をダウンロード / Download</button>
+ <div id="unmappedBox" class="unmapped-box" hidden>
+ <h3>⚠ 取引先が未登録の現場があります</h3>
+ <p class="desc">下の現場は、まだ取引先名が登録されていないので、色が付きません。<br><strong>そのままダウンロードしてもOK</strong>です（色がない状態で出てきます）。<br>もし他の現場と同じ会社なら、ここに取引先名を入れると次回からも自動で色がつきます。</p>
+ <div id="unmappedList" class="mapping-grid"></div>
+ </div>
+
+ <details class="foldable">
+ <summary>▼ どの現場に何色がついたか確認する</summary>
+ <div id="preview" class="preview"></div>
+ </details>
+
+ <div class="actions">
+ <button id="downloadBtn" class="btn big">色付き版をダウンロード / Download</button>
+ </div>
 </section>
 
 <footer>HAISHOKUBAN · BUILT FOR ATS · 2026</footer>
 
 </div>
 
+<div id="toast" class="toast"></div>
+
 <script>
 'use strict';
 
-const STORAGE_KEY = 'haishokuban.mappings.v1';
-const SKIP_VALUES = new Set(['', '-', '−', '－', '内勤', '研修', '移動日']);
+// ============================================================
+// プリセット：詳細書 + シート分析から既知の現場→取引先マッピング
+// 表記揺れ（半角/全角カナ、数字）は正規化キーでマッチング
+// ============================================================
+const PRESET_RAW = {
+ // 詳細書で確認済み
+ 'アスミオ株式会社': ['アスミオ','アスミオ2','アスミオ3','アスミオ4','アスミオ巡回'],
+ '中村緑地建設': ['中村','中村2','中村3','中村4','中村A','中村A2','中村A3','中村会議','中村会議2','中村会議3'],
+ '株式会社ホンダ': ['ホン1','ホン2','ホン3'],
+ '九州緑化産業': ['九州','九州2','九州3','九州A','九州A2','九州(夜)'],
+ '佐伯建設': ['佐伯A'],
+ 'オークス建設': ['オークス','オークス巡回'],
+ '(株)オカトク': ['オカトク','オカトク2','オカトク3','オカトク(夜)'],
+ '株式会社竹中道路': ['渥美'],
+ '(株)那の川建設': ['那の川','那の川2'],
+ '(株)エイシン': ['エイシン'],
+ // 推測（樫迫さんが修正可能）
+ 'クライムアップ': ['クライム','クライム2','クライム3'],
+ 'サンガード': ['サンガード','サンガード2','サンガード3','サンガード(夜)'],
+ 'カシワ': ['カシワ','カシワ2','カシワA','カシワ巡回'],
+ 'ユリシス': ['ユリシス','ユリシスAD','ユリシスD','ユリシスST'],
+ 'アンシェル': ['アンシェル','アンシェル2'],
+ '興和': ['興和(夜)','興和A(夜)']
+};
 
-// ---- HSL → ARGB ----
-function hslToRgb(h, s, l) {
-  s /= 100; l /= 100;
-  const k = n => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
-  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
-}
-function hslToARGB(h, s, l) {
-  const [r, g, b] = hslToRgb(h, s, l);
-  return 'FF' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
-}
-function hslToHex(h, s, l) {
-  const [r, g, b] = hslToRgb(h, s, l);
-  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-}
-
-// 取引先ごとの色相（10色相、視認区別しやすい順）
 const HUES = [0, 30, 55, 100, 150, 195, 220, 270, 310, 340];
-// 同社内現場の濃淡（薄→濃、最大4現場まで）
 const LIGHTNESS_STEPS = [86, 76, 66, 56];
 const SATURATION = 60;
+const SKIP_VALUES = new Set(['', '-', '−', '－', '内勤', '研修', '移動日']);
+const STORAGE_KEY = 'haishokuban.user_mappings.v2';
+const SCAN_ROW_START = 12, SCAN_ROW_END = 233;
+const SCAN_COL_START = 10, SCAN_COL_END = 40;
 
-// ---- 状態 ----
+// ============================================================
+// 正規化：半角カナ→全角、英数字統一、空白除去
+// ============================================================
+function normalizeKey(s) {
+ if (!s) return '';
+ return s.normalize('NFKC').replace(/\s+/g, '');
+}
+
+// プリセットを正規化キー→取引先名のMapに展開
+const PRESET = new Map();
+for (const [client, sites] of Object.entries(PRESET_RAW)) {
+ for (const s of sites) PRESET.set(normalizeKey(s), client);
+}
+
+// ============================================================
+// 色変換
+// ============================================================
+function hslToRgb(h, s, l) {
+ s /= 100; l /= 100;
+ const k = n => (n + h / 30) % 12;
+ const a = s * Math.min(l, 1 - l);
+ const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+ return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+}
+function hslToARGB(h, s, l) {
+ const [r, g, b] = hslToRgb(h, s, l);
+ return 'FF' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+function hslToHex(h, s, l) {
+ const [r, g, b] = hslToRgb(h, s, l);
+ return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================================
+// 状態
+// ============================================================
 let workbook = null;
 let currentSheetName = null;
-let currentSites = []; // string[]
-let mappings = {}; // 現場名 -> 取引先名
-let colorPlan = null; // { 現場名: {hex,argb} }
+let currentSites = [];
+let colorPlan = null;
+let unmapped = [];
+let userMappings = {};
 
-// ---- localStorage ----
-function loadMappings() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
-  catch(e) { return {}; }
+// ============================================================
+// localStorage
+// ============================================================
+function loadUserMappings() {
+ try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+ catch (e) { return {}; }
 }
-function saveMappings(m) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
+function saveUserMappings(m) {
+ localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
 }
 
-// ---- ファイル読み込み ----
+// ============================================================
+// Toast
+// ============================================================
+const toast = document.getElementById('toast');
+let toastTimer = null;
+function showToast(msg, isErr) {
+ toast.textContent = msg;
+ toast.className = 'toast show' + (isErr ? ' err' : '');
+ clearTimeout(toastTimer);
+ toastTimer = setTimeout(() => { toast.className = 'toast' + (isErr ? ' err' : ''); }, 3000);
+}
+
+// ============================================================
+// セル値取得
+// ============================================================
+function cellText(cell) {
+ const v = cell.value;
+ if (v === null || v === undefined) return '';
+ if (typeof v === 'string') return v;
+ if (typeof v === 'number') return String(v);
+ if (typeof v === 'object') {
+ if (v.text) return String(v.text);
+ if (v.result !== undefined) return String(v.result);
+ if (v.richText) return v.richText.map(t => t.text).join('');
+ }
+ return String(v);
+}
+
+// ============================================================
+// HTMLエスケープ
+// ============================================================
+function escapeHtml(s) {
+ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ============================================================
+// ファイル読み込み
+// ============================================================
 const fileInput = document.getElementById('fileInput');
 const dropZone = document.getElementById('drop');
-const loadMsg = document.getElementById('loadMsg');
 
 fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
+ if (e.target.files[0]) handleFile(e.target.files[0]);
 });
 ['dragenter', 'dragover'].forEach(ev => {
-  dropZone.addEventListener(ev, e => {
-    e.preventDefault();
-    dropZone.classList.add('over');
-  });
+ dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('over'); });
 });
 ['dragleave', 'drop'].forEach(ev => {
-  dropZone.addEventListener(ev, e => {
-    e.preventDefault();
-    dropZone.classList.remove('over');
-  });
+ dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('over'); });
 });
 dropZone.addEventListener('drop', e => {
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
+ const f = e.dataTransfer.files[0];
+ if (f) handleFile(f);
 });
 
 async function handleFile(file) {
-  loadMsg.style.display = 'none';
-  try {
-    const buf = await file.arrayBuffer();
-    workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(buf);
-    showSheetSelect();
-    loadMsg.textContent = '✓ 読み込みました: ' + file.name;
-    loadMsg.style.display = 'block';
-  } catch (err) {
-    alert('読み込みに失敗しました: ' + err.message);
-    console.error(err);
-  }
+ userMappings = loadUserMappings();
+ try {
+ const buf = await file.arrayBuffer();
+ workbook = new ExcelJS.Workbook();
+ await workbook.xlsx.load(buf);
+ showSheetSelect();
+ showToast('✓ 読み込みました: ' + file.name);
+ } catch (err) {
+ showToast('読み込みに失敗しました: ' + err.message, true);
+ console.error(err);
+ }
 }
 
-// ---- シート選択 ----
+// ============================================================
+// シート選択
+// ============================================================
 function showSheetSelect() {
-  const monthSheets = workbook.worksheets.filter(ws => /^\d{6}$/.test(ws.name));
-  if (monthSheets.length === 0) {
-    alert('月別シート（202604 のような6桁数字名）が見つかりません。');
-    return;
-  }
-  monthSheets.sort((a, b) => a.name.localeCompare(b.name));
-  const sel = document.getElementById('sheetSelect');
-  sel.innerHTML = '';
-  monthSheets.forEach(ws => {
-    const o = document.createElement('option');
-    o.value = ws.name;
-    o.textContent = ws.name.slice(0, 4) + '年' + parseInt(ws.name.slice(4)) + '月 (' + ws.name + ')';
-    sel.appendChild(o);
-  });
-  // 最新月を初期選択
-  sel.value = monthSheets[monthSheets.length - 1].name;
-  sel.onchange = () => onSheetChange(sel.value);
-  document.getElementById('step2').hidden = false;
-  onSheetChange(sel.value);
+ const monthSheets = workbook.worksheets.filter(ws => /^\d{6}$/.test(ws.name));
+ if (monthSheets.length === 0) {
+ showToast('月別シート（202604のような6桁数字名）が見つかりません', true);
+ return;
+ }
+ monthSheets.sort((a, b) => a.name.localeCompare(b.name));
+ const sel = document.getElementById('sheetSelect');
+ sel.innerHTML = '';
+ monthSheets.forEach(ws => {
+ const o = document.createElement('option');
+ o.value = ws.name;
+ o.textContent = ws.name.slice(0, 4) + '年' + parseInt(ws.name.slice(4)) + '月 (' + ws.name + ')';
+ sel.appendChild(o);
+ });
+ sel.value = monthSheets[monthSheets.length - 1].name;
+ sel.onchange = () => processSheet(sel.value);
+ document.getElementById('step2').hidden = false;
+ processSheet(sel.value);
 }
 
-function onSheetChange(name) {
-  currentSheetName = name;
-  const ws = workbook.getWorksheet(name);
-  currentSites = extractSites(ws);
-  renderMapping();
-  document.getElementById('step3').hidden = false;
-  document.getElementById('step4').hidden = true;
+// ============================================================
+// シート処理：読み込み→自動色付け→プレビュー
+// ============================================================
+function processSheet(name) {
+ currentSheetName = name;
+ const ws = workbook.getWorksheet(name);
+ currentSites = extractSites(ws);
+ const resolved = resolveMappings(currentSites);
+ unmapped = resolved.unmapped;
+ colorPlan = buildColorPlan(resolved.byClient);
+ applyColors(ws);
+ renderStep3(resolved);
+ document.getElementById('step3').hidden = false;
 }
 
-// ---- 現場名抽出 ----
-function cellText(cell) {
-  const v = cell.value;
-  if (v === null || v === undefined) return '';
-  if (typeof v === 'string') return v;
-  if (typeof v === 'number') return String(v);
-  if (typeof v === 'object') {
-    if (v.text) return String(v.text);
-    if (v.result !== undefined) return String(v.result);
-    if (v.richText) return v.richText.map(t => t.text).join('');
-  }
-  return String(v);
-}
 function extractSites(ws) {
-  const set = new Set();
-  // 警備員データ範囲: 行12〜233、列10〜40（J〜AN列、最大31日分）
-  for (let r = 12; r <= 233; r++) {
-    for (let c = 10; c <= 40; c++) {
-      const t = cellText(ws.getCell(r, c)).trim();
-      if (t && !SKIP_VALUES.has(t)) set.add(t);
-    }
-  }
-  return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
+ const set = new Set();
+ for (let r = SCAN_ROW_START; r <= SCAN_ROW_END; r++) {
+ for (let c = SCAN_COL_START; c <= SCAN_COL_END; c++) {
+ const t = cellText(ws.getCell(r, c)).trim();
+ if (t && !SKIP_VALUES.has(t)) set.add(t);
+ }
+ }
+ return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
 }
 
-// ---- マッピング UI ----
-function renderMapping() {
-  mappings = loadMappings();
-  const list = document.getElementById('mappingList');
-  list.innerHTML = '';
-  const knownClients = [...new Set(Object.values(mappings))].filter(Boolean).sort();
-  const datalistId = 'clientSuggest';
-  // datalist for suggestions
-  let dl = document.getElementById(datalistId);
-  if (!dl) {
-    dl = document.createElement('datalist');
-    dl.id = datalistId;
-    document.body.appendChild(dl);
-  }
-  dl.innerHTML = knownClients.map(c => `<option value="${escapeHtml(c)}">`).join('');
-
-  currentSites.forEach(site => {
-    const lbl = document.createElement('div');
-    lbl.className = 'lbl';
-    lbl.textContent = site;
-    const wrap = document.createElement('div');
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = '取引先名（空欄可）';
-    input.value = mappings[site] || '';
-    input.setAttribute('list', datalistId);
-    input.dataset.site = site;
-    input.oninput = () => {
-      mappings[site] = input.value.trim();
-      saveMappings(mappings);
-    };
-    wrap.appendChild(input);
-    list.appendChild(lbl);
-    list.appendChild(wrap);
-  });
-}
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function resolveMappings(sites) {
+ const byClient = {};
+ const unmapped = [];
+ for (const site of sites) {
+ const key = normalizeKey(site);
+ const client = (PRESET.get(key) || userMappings[key] || '').trim();
+ if (!client) {
+ unmapped.push(site);
+ } else {
+ if (!byClient[client]) byClient[client] = [];
+ byClient[client].push(site);
+ }
+ }
+ return { byClient, unmapped };
 }
 
-// ---- 色付けプラン作成 ----
-function buildColorPlan() {
-  // 取引先 -> 現場名[] 集約
-  const byClient = {};
-  currentSites.forEach(site => {
-    const client = (mappings[site] || '').trim();
-    if (!client) return;
-    if (!byClient[client]) byClient[client] = [];
-    byClient[client].push(site);
-  });
-  const plan = {};
-  // 複数現場の取引先だけ、色相を割り当て
-  const multi = Object.entries(byClient).filter(([, sites]) => sites.length >= 2);
-  // 取引先名でソート（再現性のため）
-  multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
-  multi.forEach(([client, sites], idx) => {
-    const hue = HUES[idx % HUES.length];
-    sites.sort((a, b) => a.localeCompare(b, 'ja'));
-    sites.forEach((site, i) => {
-      const l = LIGHTNESS_STEPS[i % LIGHTNESS_STEPS.length];
-      plan[site] = {
-        client: client,
-        hue: hue,
-        lightness: l,
-        hex: hslToHex(hue, SATURATION, l),
-        argb: hslToARGB(hue, SATURATION, l)
-      };
-    });
-  });
-  return { plan, byClient };
+function buildColorPlan(byClient) {
+ const plan = {};
+ const multi = Object.entries(byClient).filter(([, sites]) => sites.length >= 2);
+ multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+ multi.forEach(([client, sites], idx) => {
+ const hue = HUES[idx % HUES.length];
+ const sortedSites = [...sites].sort((a, b) => a.localeCompare(b, 'ja'));
+ sortedSites.forEach((site, i) => {
+ const l = LIGHTNESS_STEPS[i % LIGHTNESS_STEPS.length];
+ plan[site] = {
+ client, hue, lightness: l,
+ hex: hslToHex(hue, SATURATION, l),
+ argb: hslToARGB(hue, SATURATION, l)
+ };
+ });
+ });
+ return plan;
 }
 
-// ---- 適用 ----
-document.getElementById('applyBtn').onclick = () => {
-  const result = buildColorPlan();
-  colorPlan = result.plan;
-  const ws = workbook.getWorksheet(currentSheetName);
-  // 既存色のクリア＆新規塗り
-  for (let r = 12; r <= 233; r++) {
-    for (let c = 10; c <= 40; c++) {
-      const cell = ws.getCell(r, c);
-      const t = cellText(cell).trim();
-      if (!t || SKIP_VALUES.has(t)) continue;
-      const p = colorPlan[t];
-      if (p) {
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: p.argb }
-        };
-      } else {
-        // 色なし対象は塗りをクリア（既存色を消す）
-        cell.fill = { type: 'pattern', pattern: 'none' };
-      }
-    }
-  }
-  renderSummary(result);
-  document.getElementById('step4').hidden = false;
-  document.getElementById('step4').scrollIntoView({ behavior: 'smooth', block: 'start' });
-};
-
-document.getElementById('clearBtn').onclick = () => {
-  if (!confirm('入力した取引先マッピングをすべて消します。よろしいですか？')) return;
-  mappings = {};
-  saveMappings(mappings);
-  renderMapping();
-};
-
-// ---- サマリー ----
-function renderSummary({ plan, byClient }) {
-  const div = document.getElementById('summary');
-  const multi = Object.entries(byClient).filter(([, s]) => s.length >= 2);
-  const single = Object.entries(byClient).filter(([, s]) => s.length < 2);
-  const unmapped = currentSites.filter(s => !mappings[s] || !mappings[s].trim());
-  let html = '<p><strong>色を付けた現場</strong></p>';
-  if (multi.length === 0) {
-    html += '<p style="color:var(--sub)">対象なし（1社で複数現場のものがありません）</p>';
-  } else {
-    html += '<table><thead><tr><th>取引先</th><th>現場</th><th>色</th></tr></thead><tbody>';
-    multi.forEach(([client, sites]) => {
-      sites.sort((a, b) => a.localeCompare(b, 'ja'));
-      sites.forEach((site, i) => {
-        const p = plan[site];
-        html += `<tr>${i === 0 ? `<td rowspan="${sites.length}">${escapeHtml(client)}</td>` : ''}<td>${escapeHtml(site)}</td><td><span class="swatch" style="background:${p.hex}"></span>${p.hex}</td></tr>`;
-      });
-    });
-    html += '</tbody></table>';
-  }
-  if (single.length > 0) {
-    html += `<p style="margin-top:0.8rem"><strong>色なし（1社1現場）</strong>：${single.map(([c, s]) => escapeHtml(s[0]) + '（' + escapeHtml(c) + '）').join('、')}</p>`;
-  }
-  if (unmapped.length > 0) {
-    html += `<p class="warn">取引先未入力：${unmapped.map(escapeHtml).join('、')} （このままだと色は付きません）</p>`;
-  }
-  div.innerHTML = html;
+function applyColors(ws) {
+ for (let r = SCAN_ROW_START; r <= SCAN_ROW_END; r++) {
+ for (let c = SCAN_COL_START; c <= SCAN_COL_END; c++) {
+ const cell = ws.getCell(r, c);
+ const t = cellText(cell).trim();
+ if (!t || SKIP_VALUES.has(t)) continue;
+ const p = colorPlan[t];
+ if (p) {
+ cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: p.argb } };
+ } else {
+ cell.fill = { type: 'pattern', pattern: 'none' };
+ }
+ }
+ }
 }
 
-// ---- ダウンロード ----
+// ============================================================
+// STEP 03 UI
+// ============================================================
+function renderStep3(resolved) {
+ const total = currentSites.length;
+ const colored = Object.keys(colorPlan).length;
+ const noColor = Object.entries(resolved.byClient)
+ .filter(([, s]) => s.length < 2)
+ .reduce((a, [, s]) => a + s.length, 0);
+ const unmappedCount = unmapped.length;
+
+ document.getElementById('statRow').innerHTML = `
+ <div class="stat"><div class="lbl">TOTAL</div><div class="num">${total}</div></div>
+ <div class="stat"><div class="lbl">COLORED</div><div class="num">${colored}</div></div>
+ <div class="stat"><div class="lbl">NO COLOR</div><div class="num">${noColor}</div></div>
+ <div class="stat ${unmappedCount > 0 ? 'warn' : ''}"><div class="lbl">UNMAPPED</div><div class="num">${unmappedCount}</div></div>
+ `;
+
+ const ub = document.getElementById('unmappedBox');
+ const ul = document.getElementById('unmappedList');
+ if (unmappedCount === 0) {
+ ub.hidden = true;
+ } else {
+ ub.hidden = false;
+ ul.innerHTML = '';
+ const allClients = [...new Set([
+ ...Object.keys(PRESET_RAW),
+ ...Object.values(userMappings)
+ ])].filter(Boolean).sort();
+ const dlId = 'clientDL';
+ let dl = document.getElementById(dlId);
+ if (!dl) {
+ dl = document.createElement('datalist');
+ dl.id = dlId;
+ document.body.appendChild(dl);
+ }
+ dl.innerHTML = allClients.map(c => `<option value="${escapeHtml(c)}">`).join('');
+
+ unmapped.forEach(site => {
+ const lbl = document.createElement('div');
+ lbl.className = 'mk-lbl';
+ lbl.textContent = site;
+ const inp = document.createElement('input');
+ inp.type = 'text';
+ inp.placeholder = '取引先名（空欄可）';
+ inp.setAttribute('list', dlId);
+ inp.value = userMappings[normalizeKey(site)] || '';
+ inp.onchange = () => {
+ const key = normalizeKey(site);
+ const val = inp.value.trim();
+ if (val) userMappings[key] = val;
+ else delete userMappings[key];
+ saveUserMappings(userMappings);
+ processSheet(currentSheetName);
+ };
+ ul.appendChild(lbl);
+ ul.appendChild(inp);
+ });
+ }
+
+ renderPreview(resolved);
+}
+
+function renderPreview(resolved) {
+ const multi = Object.entries(resolved.byClient).filter(([, s]) => s.length >= 2);
+ const single = Object.entries(resolved.byClient).filter(([, s]) => s.length < 2);
+ multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+
+ let html = '<h4 style="font-size:0.9rem;font-weight:500;margin:0.5rem 0">色付け対象（1社で複数現場）</h4>';
+ if (multi.length === 0) {
+ html += '<p style="color:var(--sub);font-size:0.85rem">対象なし</p>';
+ } else {
+ html += '<table><thead><tr><th>取引先</th><th>現場</th><th>色</th></tr></thead><tbody>';
+ multi.forEach(([client, sites]) => {
+ const sorted = [...sites].sort((a, b) => a.localeCompare(b, 'ja'));
+ sorted.forEach((site, i) => {
+ const p = colorPlan[site];
+ html += `<tr>${i === 0 ? `<td rowspan="${sorted.length}">${escapeHtml(client)}</td>` : ''}<td>${escapeHtml(site)}</td><td><span class="swatch" style="background:${p.hex}"></span><code style="font-size:0.78rem">${p.hex}</code></td></tr>`;
+ });
+ });
+ html += '</tbody></table>';
+ }
+ if (single.length > 0) {
+ html += `<h4 style="font-size:0.9rem;font-weight:500;margin:1rem 0 0.5rem">色なし（1社1現場）</h4>`;
+ html += `<p style="font-size:0.85rem;color:var(--sub)">${single.map(([c, s]) => escapeHtml(s[0]) + '（' + escapeHtml(c) + '）').join('、')}</p>`;
+ }
+ if (multi.length > HUES.length) {
+ html += `<p style="color:var(--accent);font-size:0.85rem;margin-top:1rem">⚠ 取引先が${multi.length}社あり、色相パレット（${HUES.length}色）を超えています。一部の取引先で色相が循環し、別社と似た色になる可能性があります。</p>`;
+ }
+ document.getElementById('preview').innerHTML = html;
+}
+
+// ============================================================
+// ダウンロード
+// ============================================================
 document.getElementById('downloadBtn').onclick = async () => {
-  const buf = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const fname = `配色番_${currentSheetName}.xlsx`;
-  saveAs(blob, fname);
+ try {
+ const buf = await workbook.xlsx.writeBuffer();
+ const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+ saveAs(blob, `配色番_${currentSheetName}.xlsx`);
+ showToast('✓ ダウンロードしました');
+ } catch (err) {
+ showToast('ダウンロードに失敗: ' + err.message, true);
+ console.error(err);
+ }
 };
 
 </script>
