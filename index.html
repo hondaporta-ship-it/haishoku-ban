@@ -40,16 +40,19 @@ input[type=file]{display:none}
 .btn.ghost{background:transparent;color:var(--navy);border:1px solid var(--navy)}
 .btn.ghost:hover{background:var(--navy);color:#fff}
 select{font-family:inherit;font-size:1rem;padding:0.5rem 0.8rem;border:1px solid var(--line-strong);background:#fff;width:100%;max-width:280px}
+
 .stat-row{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:1rem}
 .stat{background:var(--bg);padding:0.8rem 1rem;flex:1;min-width:120px;border-left:3px solid var(--navy)}
 .stat .lbl{font-size:0.72rem;color:var(--sub);font-family:'JetBrains Mono',monospace;letter-spacing:0.06em}
 .stat .num{font-size:1.6rem;font-weight:500;color:var(--ink);font-family:'JetBrains Mono',monospace;line-height:1.2}
 .stat.warn{border-left-color:var(--warn-border);background:var(--warn-bg)}
 .stat.warn .num{color:var(--accent)}
+
 .preview table{width:100%;border-collapse:collapse;font-size:0.88rem}
 .preview th,.preview td{border:0.5px solid var(--line);padding:0.4rem 0.6rem;text-align:left;vertical-align:top}
 .preview th{background:var(--bg);font-weight:500;font-size:0.8rem;color:var(--sub)}
 .swatch{display:inline-block;width:14px;height:14px;vertical-align:middle;border:0.5px solid var(--line-strong);margin-right:0.3rem}
+
 .unmapped-box{background:var(--warn-bg);border:1px solid var(--warn-border);padding:1rem;margin:1rem 0}
 .unmapped-box h3{font-size:0.95rem;color:var(--accent);font-weight:500;margin-bottom:0.5rem}
 .unmapped-box .desc{font-size:0.85rem;color:var(--sub);margin-bottom:0.8rem;line-height:1.6}
@@ -57,15 +60,20 @@ select{font-family:inherit;font-size:1rem;padding:0.5rem 0.8rem;border:1px solid
 .mapping-grid .mk-lbl{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:500}
 .mapping-grid input[type=text]{font-family:inherit;font-size:0.95rem;padding:0.4rem 0.6rem;border:1px solid var(--line);background:#fff;width:100%}
 .mapping-grid input[type=text]:focus{outline:none;border-color:var(--navy)}
+
 .foldable{margin-top:1rem}
 .foldable summary{cursor:pointer;font-size:0.9rem;color:var(--navy);padding:0.5rem 0;user-select:none}
 .foldable summary:hover{color:var(--navy-deep)}
 .foldable[open] summary{margin-bottom:0.8rem}
+
 .actions{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1.5rem;align-items:center}
+
 .toast{position:fixed;top:1rem;right:1rem;background:var(--ink);color:#fff;padding:0.7rem 1.2rem;font-size:0.9rem;z-index:1000;opacity:0;transition:opacity 0.2s;pointer-events:none}
 .toast.show{opacity:1}
 .toast.err{background:var(--accent)}
+
 footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-size:0.75rem;color:var(--sub);text-align:center;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
+
 @media (max-width:560px){
  body{padding:1rem 0.7rem 3rem}
  h1{font-size:1.7rem}
@@ -78,14 +86,16 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
 </head>
 <body>
 <div class="wrap">
+
 <header>
  <div class="brand">
  <h1>配色番</h1>
  <span class="sub">Haishokuban</span>
  </div>
  <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
- <p class="ver">v0.3 / ATS 社内用</p>
+ <p class="ver">v0.4 / ATS 社内用</p>
 </header>
+
 <section id="step1">
  <div class="step"><span class="step-no">STEP 01</span><h2>シフト表 Excel を選ぶ</h2></div>
  <div class="drop-zone" id="drop">
@@ -95,31 +105,41 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
  <label for="fileInput" class="btn">ファイルを選ぶ / Choose File</label>
  </div>
 </section>
+
 <section id="step2" hidden>
  <div class="step"><span class="step-no">STEP 02</span><h2>月を選ぶ</h2></div>
  <select id="sheetSelect"></select>
 </section>
+
 <section id="step3" hidden>
  <div class="step"><span class="step-no">STEP 03</span><h2>確認してダウンロード</h2></div>
  <div id="statRow" class="stat-row"></div>
+
  <div id="unmappedBox" class="unmapped-box" hidden>
  <h3>⚠ 取引先が未登録の現場があります</h3>
  <p class="desc">下の現場は、まだ取引先名が登録されていないので、色が付きません。<br><strong>そのままダウンロードしてもOK</strong>です（色がない状態で出てきます）。<br>もし他の現場と同じ会社なら、ここに取引先名を入れると次回からも自動で色がつきます。</p>
  <div id="unmappedList" class="mapping-grid"></div>
  </div>
+
  <details class="foldable">
  <summary>▼ どの現場に何色がついたか確認する</summary>
  <div id="preview" class="preview"></div>
  </details>
+
  <div class="actions">
  <button id="downloadBtn" class="btn big">色付き版をダウンロード / Download</button>
  </div>
 </section>
+
 <footer>HAISHOKUBAN · BUILT FOR ATS · 2026</footer>
+
 </div>
+
 <div id="toast" class="toast"></div>
+
 <script>
 'use strict';
+
 const PRESET_RAW = {
  'アスミオ株式会社': ['アスミオ','アスミオ2','アスミオ3','アスミオ4','アスミオ巡回'],
  '中村緑地建設': ['中村','中村2','中村3','中村4','中村A','中村A2','中村A3','中村会議','中村会議2','中村会議3'],
@@ -138,6 +158,7 @@ const PRESET_RAW = {
  'アンシェル': ['アンシェル','アンシェル2'],
  '興和': ['興和(夜)','興和A(夜)']
 };
+
 const HUES = [0, 30, 55, 100, 150, 195, 220, 270, 310, 340];
 const LIGHTNESS_STEPS = [86, 76, 66, 56];
 const SATURATION = 60;
@@ -145,14 +166,17 @@ const SKIP_VALUES = new Set(['', '-', '−', '－', '内勤', '研修', '移動�
 const STORAGE_KEY = 'haishokuban.user_mappings.v2';
 const SCAN_ROW_START = 12, SCAN_ROW_END = 233;
 const SCAN_COL_START = 10, SCAN_COL_END = 40;
+
 function normalizeKey(s) {
  if (!s) return '';
  return s.normalize('NFKC').replace(/\s+/g, '');
 }
+
 const PRESET = new Map();
 for (const [client, sites] of Object.entries(PRESET_RAW)) {
  for (const s of sites) PRESET.set(normalizeKey(s), client);
 }
+
 function hslToRgb(h, s, l) {
  s /= 100; l /= 100;
  const k = n => (n + h / 30) % 12;
@@ -168,12 +192,14 @@ function hslToHex(h, s, l) {
  const [r, g, b] = hslToRgb(h, s, l);
  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 }
+
 let workbook = null;
 let currentSheetName = null;
 let currentSites = [];
 let colorPlan = null;
 let unmapped = [];
 let userMappings = {};
+
 function loadUserMappings() {
  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
  catch (e) { return {}; }
@@ -181,6 +207,7 @@ function loadUserMappings() {
 function saveUserMappings(m) {
  localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
 }
+
 const toast = document.getElementById('toast');
 let toastTimer = null;
 function showToast(msg, isErr) {
@@ -189,6 +216,7 @@ function showToast(msg, isErr) {
  clearTimeout(toastTimer);
  toastTimer = setTimeout(() => { toast.className = 'toast' + (isErr ? ' err' : ''); }, 3000);
 }
+
 function cellText(cell) {
  const v = cell.value;
  if (v === null || v === undefined) return '';
@@ -201,11 +229,14 @@ function cellText(cell) {
  }
  return String(v);
 }
+
 function escapeHtml(s) {
  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+
 const fileInput = document.getElementById('fileInput');
 const dropZone = document.getElementById('drop');
+
 fileInput.addEventListener('change', e => {
  if (e.target.files[0]) handleFile(e.target.files[0]);
 });
@@ -219,6 +250,7 @@ dropZone.addEventListener('drop', e => {
  const f = e.dataTransfer.files[0];
  if (f) handleFile(f);
 });
+
 async function handleFile(file) {
  userMappings = loadUserMappings();
  try {
@@ -232,6 +264,7 @@ async function handleFile(file) {
  console.error(err);
  }
 }
+
 function showSheetSelect() {
  const monthSheets = workbook.worksheets.filter(ws => /^\d{6}$/.test(ws.name));
  if (monthSheets.length === 0) {
@@ -252,6 +285,7 @@ function showSheetSelect() {
  document.getElementById('step2').hidden = false;
  processSheet(sel.value);
 }
+
 function processSheet(name) {
  currentSheetName = name;
  const ws = workbook.getWorksheet(name);
@@ -263,6 +297,7 @@ function processSheet(name) {
  renderStep3(resolved);
  document.getElementById('step3').hidden = false;
 }
+
 function extractSites(ws) {
  const set = new Set();
  for (let r = SCAN_ROW_START; r <= SCAN_ROW_END; r++) {
@@ -273,6 +308,7 @@ function extractSites(ws) {
  }
  return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
 }
+
 function resolveMappings(sites) {
  const byClient = {};
  const unmapped = [];
@@ -288,6 +324,7 @@ function resolveMappings(sites) {
  }
  return { byClient, unmapped };
 }
+
 function buildColorPlan(byClient) {
  const plan = {};
  const multi = Object.entries(byClient).filter(([, sites]) => sites.length >= 2);
@@ -306,13 +343,17 @@ function buildColorPlan(byClient) {
  });
  return plan;
 }
+
 function applyColors(ws) {
+ // 処理範囲（行12-233、列10-40）はすべて配色番のルールに従う：
+ // - マッピング済み現場 → 該当色
+ // - それ以外（休み「-」、内勤、研修、未マッピング、空欄） → 色を明示的にクリア
+ // これをしないと、元のExcelで手作業塗りされた色が残ってしまう
  for (let r = SCAN_ROW_START; r <= SCAN_ROW_END; r++) {
  for (let c = SCAN_COL_START; c <= SCAN_COL_END; c++) {
  const cell = ws.getCell(r, c);
  const t = cellText(cell).trim();
- if (!t || SKIP_VALUES.has(t)) continue;
- const p = colorPlan[t];
+ const p = (t && !SKIP_VALUES.has(t)) ? colorPlan[t] : null;
  if (p) {
  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: p.argb } };
  } else {
@@ -321,6 +362,7 @@ function applyColors(ws) {
  }
  }
 }
+
 function renderStep3(resolved) {
  const total = currentSites.length;
  const colored = Object.keys(colorPlan).length;
@@ -328,12 +370,14 @@ function renderStep3(resolved) {
  .filter(([, s]) => s.length < 2)
  .reduce((a, [, s]) => a + s.length, 0);
  const unmappedCount = unmapped.length;
+
  document.getElementById('statRow').innerHTML = `
  <div class="stat"><div class="lbl">TOTAL</div><div class="num">${total}</div></div>
  <div class="stat"><div class="lbl">COLORED</div><div class="num">${colored}</div></div>
  <div class="stat"><div class="lbl">NO COLOR</div><div class="num">${noColor}</div></div>
  <div class="stat ${unmappedCount > 0 ? 'warn' : ''}"><div class="lbl">UNMAPPED</div><div class="num">${unmappedCount}</div></div>
  `;
+
  const ub = document.getElementById('unmappedBox');
  const ul = document.getElementById('unmappedList');
  if (unmappedCount === 0) {
@@ -353,6 +397,7 @@ function renderStep3(resolved) {
  document.body.appendChild(dl);
  }
  dl.innerHTML = allClients.map(c => `<option value="${escapeHtml(c)}">`).join('');
+
  unmapped.forEach(site => {
  const lbl = document.createElement('div');
  lbl.className = 'mk-lbl';
@@ -374,12 +419,15 @@ function renderStep3(resolved) {
  ul.appendChild(inp);
  });
  }
+
  renderPreview(resolved);
 }
+
 function renderPreview(resolved) {
  const multi = Object.entries(resolved.byClient).filter(([, s]) => s.length >= 2);
  const single = Object.entries(resolved.byClient).filter(([, s]) => s.length < 2);
  multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+
  let html = '<h4 style="font-size:0.9rem;font-weight:500;margin:0.5rem 0">色付け対象（1社で複数現場）</h4>';
  if (multi.length === 0) {
  html += '<p style="color:var(--sub);font-size:0.85rem">対象なし</p>';
@@ -403,6 +451,7 @@ function renderPreview(resolved) {
  }
  document.getElementById('preview').innerHTML = html;
 }
+
 function cleanupBeforeWrite(wb) {
  let removedCount = 0;
  wb.eachSheet(ws => {
@@ -431,6 +480,7 @@ function cleanupBeforeWrite(wb) {
  });
  if (removedCount > 0) console.log(`cleanupBeforeWrite: removed ${removedCount} unsafe data validations`);
 }
+
 document.getElementById('downloadBtn').onclick = async () => {
  try {
  cleanupBeforeWrite(workbook);
@@ -443,6 +493,7 @@ document.getElementById('downloadBtn').onclick = async () => {
  console.error(err);
  }
 };
+
 </script>
 </body>
 </html>
