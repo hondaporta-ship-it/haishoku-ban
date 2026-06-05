@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>配色番 - Haishokuban</title>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <style>
 :root{
@@ -37,22 +37,17 @@ input[type=file]{display:none}
 .btn:hover{background:var(--navy-deep)}
 .btn:disabled{background:#aaa;cursor:not-allowed}
 .btn.big{font-size:1.1rem;padding:1rem 2rem}
-.btn.ghost{background:transparent;color:var(--navy);border:1px solid var(--navy)}
-.btn.ghost:hover{background:var(--navy);color:#fff}
 select{font-family:inherit;font-size:1rem;padding:0.5rem 0.8rem;border:1px solid var(--line-strong);background:#fff;width:100%;max-width:280px}
-
 .stat-row{display:flex;gap:1.2rem;flex-wrap:wrap;margin-bottom:1rem}
 .stat{background:var(--bg);padding:0.8rem 1rem;flex:1;min-width:120px;border-left:3px solid var(--navy)}
 .stat .lbl{font-size:0.72rem;color:var(--sub);font-family:'JetBrains Mono',monospace;letter-spacing:0.06em}
 .stat .num{font-size:1.6rem;font-weight:500;color:var(--ink);font-family:'JetBrains Mono',monospace;line-height:1.2}
 .stat.warn{border-left-color:var(--warn-border);background:var(--warn-bg)}
 .stat.warn .num{color:var(--accent)}
-
 .preview table{width:100%;border-collapse:collapse;font-size:0.88rem}
 .preview th,.preview td{border:0.5px solid var(--line);padding:0.4rem 0.6rem;text-align:left;vertical-align:top}
 .preview th{background:var(--bg);font-weight:500;font-size:0.8rem;color:var(--sub)}
 .swatch{display:inline-block;width:14px;height:14px;vertical-align:middle;border:0.5px solid var(--line-strong);margin-right:0.3rem}
-
 .unmapped-box{background:var(--warn-bg);border:1px solid var(--warn-border);padding:1rem;margin:1rem 0}
 .unmapped-box h3{font-size:0.95rem;color:var(--accent);font-weight:500;margin-bottom:0.5rem}
 .unmapped-box .desc{font-size:0.85rem;color:var(--sub);margin-bottom:0.8rem;line-height:1.6}
@@ -60,20 +55,16 @@ select{font-family:inherit;font-size:1rem;padding:0.5rem 0.8rem;border:1px solid
 .mapping-grid .mk-lbl{font-family:'JetBrains Mono',monospace;font-size:0.9rem;font-weight:500}
 .mapping-grid input[type=text]{font-family:inherit;font-size:0.95rem;padding:0.4rem 0.6rem;border:1px solid var(--line);background:#fff;width:100%}
 .mapping-grid input[type=text]:focus{outline:none;border-color:var(--navy)}
-
 .foldable{margin-top:1rem}
 .foldable summary{cursor:pointer;font-size:0.9rem;color:var(--navy);padding:0.5rem 0;user-select:none}
 .foldable summary:hover{color:var(--navy-deep)}
 .foldable[open] summary{margin-bottom:0.8rem}
-
 .actions{display:flex;gap:0.8rem;flex-wrap:wrap;margin-top:1.5rem;align-items:center}
-
+.busy{font-size:0.85rem;color:var(--sub);margin-top:0.6rem}
 .toast{position:fixed;top:1rem;right:1rem;background:var(--ink);color:#fff;padding:0.7rem 1.2rem;font-size:0.9rem;z-index:1000;opacity:0;transition:opacity 0.2s;pointer-events:none}
 .toast.show{opacity:1}
 .toast.err{background:var(--accent)}
-
 footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-size:0.75rem;color:var(--sub);text-align:center;font-family:'JetBrains Mono',monospace;letter-spacing:0.05em}
-
 @media (max-width:560px){
  body{padding:1rem 0.7rem 3rem}
  h1{font-size:1.7rem}
@@ -93,7 +84,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
  <span class="sub">Haishokuban</span>
  </div>
  <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
- <p class="ver">v0.6 / ATS 社内用</p>
+ <p class="ver">v0.7 / ATS 社内用</p>
 </header>
 
 <section id="step1">
@@ -104,29 +95,27 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
  <input type="file" id="fileInput" accept=".xlsx">
  <label for="fileInput" class="btn">ファイルを選ぶ / Choose File</label>
  </div>
+ <p id="busy" class="busy" style="display:none">処理中… 全月に色をつけています</p>
 </section>
 
 <section id="step2" hidden>
  <div class="step"><span class="step-no">STEP 02</span><h2>プレビューする月を選ぶ</h2></div>
- <p style="font-size:0.85rem;color:var(--sub);margin-bottom:0.6rem">色はすべての月に自動でつきます。ここは確認用に1ヶ月だけ表示する選択です。</p>
+ <p style="font-size:0.85rem;color:var(--sub);margin-bottom:0.6rem">色はすべての月に自動でついています。ここは確認用に1ヶ月だけ表示する選択です。</p>
  <select id="sheetSelect"></select>
 </section>
 
 <section id="step3" hidden>
  <div class="step"><span class="step-no">STEP 03</span><h2>確認してダウンロード</h2></div>
  <div id="statRow" class="stat-row"></div>
-
  <div id="unmappedBox" class="unmapped-box" hidden>
  <h3>⚠ 取引先が未登録の現場があります</h3>
  <p class="desc">下の現場は、まだ取引先名が登録されていないので、色が付きません。<br><strong>そのままダウンロードしてもOK</strong>です（色がない状態で出てきます）。<br>もし他の現場と同じ会社なら、ここに取引先名を入れると次回からも自動で色がつきます。</p>
  <div id="unmappedList" class="mapping-grid"></div>
  </div>
-
  <details class="foldable">
  <summary>▼ どの現場に何色がついたか確認する</summary>
  <div id="preview" class="preview"></div>
  </details>
-
  <div class="actions">
  <button id="downloadBtn" class="btn big">色付き版をダウンロード / Download</button>
  </div>
@@ -160,19 +149,15 @@ const PRESET_RAW = {
  '興和': ['興和(夜)','興和A(夜)']
 };
 
-const HUES = [0, 30, 55, 100, 150, 195, 220, 270, 310, 340];
-const LIGHTNESS_STEPS = [86, 76, 66, 56];
-const SATURATION = 60;
+const SATURATION = 65;
 const SKIP_VALUES = new Set(['', '-', '−', '－', '内勤', '研修', '移動日']);
 const STORAGE_KEY = 'haishokuban.user_mappings.v2';
-const SCAN_ROW_START = 12, SCAN_ROW_END = 233;
-const SCAN_COL_START = 10, SCAN_COL_END = 40;
+const SCAN_ROW_START = 12, SCAN_ROW_END = 233, SCAN_COL_START = 10, SCAN_COL_END = 40;
 
 function normalizeKey(s) {
  if (!s) return '';
  return s.normalize('NFKC').replace(/\s+/g, '');
 }
-
 const PRESET = new Map();
 for (const [client, sites] of Object.entries(PRESET_RAW)) {
  for (const s of sites) PRESET.set(normalizeKey(s), client);
@@ -194,10 +179,14 @@ function hslToHex(h, s, l) {
  return '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
-let workbook = null;
+let originalBytes = null;
+let zip = null;
+let sheetMap = {};
+let monthSheetNames = [];
+let sharedStrings = [];
+let colorPlan = null;
 let currentSheetName = null;
 let currentSites = [];
-let colorPlan = null;
 let unmapped = [];
 let userMappings = {};
 
@@ -205,9 +194,7 @@ function loadUserMappings() {
  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
  catch (e) { return {}; }
 }
-function saveUserMappings(m) {
- localStorage.setItem(STORAGE_KEY, JSON.stringify(m));
-}
+function saveUserMappings(m) { localStorage.setItem(STORAGE_KEY, JSON.stringify(m)); }
 
 const toast = document.getElementById('toast');
 let toastTimer = null;
@@ -217,119 +204,98 @@ function showToast(msg, isErr) {
  clearTimeout(toastTimer);
  toastTimer = setTimeout(() => { toast.className = 'toast' + (isErr ? ' err' : ''); }, 3000);
 }
-
-function cellText(cell) {
- const v = cell.value;
- if (v === null || v === undefined) return '';
- if (typeof v === 'string') return v;
- if (typeof v === 'number') return String(v);
- if (typeof v === 'object') {
- if (v.text) return String(v.text);
- if (v.result !== undefined) return String(v.result);
- if (v.richText) return v.richText.map(t => t.text).join('');
- }
- return String(v);
-}
-
 function escapeHtml(s) {
  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function decodeXml(s) {
+ return s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+}
+function colToNum(col) {
+ let n = 0;
+ for (let i = 0; i < col.length; i++) n = n * 26 + (col.charCodeAt(i) - 64);
+ return n;
 }
 
 const fileInput = document.getElementById('fileInput');
 const dropZone = document.getElementById('drop');
+const busyEl = document.getElementById('busy');
 
-fileInput.addEventListener('change', e => {
- if (e.target.files[0]) handleFile(e.target.files[0]);
-});
-['dragenter', 'dragover'].forEach(ev => {
- dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('over'); });
-});
-['dragleave', 'drop'].forEach(ev => {
- dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('over'); });
-});
-dropZone.addEventListener('drop', e => {
- const f = e.dataTransfer.files[0];
- if (f) handleFile(f);
-});
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+['dragenter', 'dragover'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('over'); }));
+dropZone.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
 
 async function handleFile(file) {
  userMappings = loadUserMappings();
+ busyEl.style.display = 'block';
  try {
  const buf = await file.arrayBuffer();
- workbook = new ExcelJS.Workbook();
- await workbook.xlsx.load(buf);
- showSheetSelect();
+ originalBytes = new Uint8Array(buf);
+ await reloadAndProcess();
+ buildSheetSelector();
  showToast('✓ 読み込みました: ' + file.name);
  } catch (err) {
  showToast('読み込みに失敗しました: ' + err.message, true);
  console.error(err);
+ } finally {
+ busyEl.style.display = 'none';
  }
 }
 
-function showSheetSelect() {
- const monthSheets = workbook.worksheets.filter(ws => /^\d{6}$/.test(ws.name));
- if (monthSheets.length === 0) {
- showToast('月別シート（202604のような6桁数字名）が見つかりません', true);
- return;
- }
- monthSheets.sort((a, b) => a.name.localeCompare(b.name));
-
- processAllMonthSheets(monthSheets);
-
- const sel = document.getElementById('sheetSelect');
- sel.innerHTML = '';
- monthSheets.forEach(ws => {
- const o = document.createElement('option');
- o.value = ws.name;
- o.textContent = ws.name.slice(0, 4) + '年' + parseInt(ws.name.slice(4)) + '月 (' + ws.name + ')';
- sel.appendChild(o);
- });
- const def = pickDefaultSheet(monthSheets);
- sel.value = def;
- sel.onchange = () => previewSheet(sel.value);
- document.getElementById('step2').hidden = false;
- previewSheet(def);
+async function reloadAndProcess() {
+ zip = await JSZip.loadAsync(originalBytes);
+ await parseWorkbook();
+ await parseSharedStrings();
+ await processAllMonthSheets();
 }
 
-function pickDefaultSheet(monthSheets) {
- const now = new Date();
- const ym = now.getFullYear().toString() + String(now.getMonth() + 1).padStart(2, '0');
- const exact = monthSheets.find(ws => ws.name === ym);
- if (exact) return exact.name;
- const future = monthSheets.filter(ws => ws.name >= ym);
- if (future.length > 0) return future[0].name;
- return monthSheets[0].name;
+async function parseWorkbook() {
+ const wbXml = await zip.file('xl/workbook.xml').async('string');
+ const relsXml = await zip.file('xl/_rels/workbook.xml.rels').async('string');
+ const ridToTarget = {};
+ for (const m of relsXml.matchAll(/<Relationship[^>]*Id="(rId\d+)"[^>]*Target="([^"]+)"[^>]*\/>/g)) {
+ ridToTarget[m[1]] = m[2];
+ }
+ for (const m of relsXml.matchAll(/<Relationship[^>]*Target="([^"]+)"[^>]*Id="(rId\d+)"[^>]*\/>/g)) {
+ ridToTarget[m[2]] = m[1];
+ }
+ sheetMap = {};
+ monthSheetNames = [];
+ for (const m of wbXml.matchAll(/<sheet[^>]*name="([^"]+)"[^>]*r:id="(rId\d+)"[^>]*\/>/g)) {
+ const name = decodeXml(m[1]), rid = m[2];
+ let target = ridToTarget[rid];
+ if (!target) continue;
+ if (!target.startsWith('xl/')) target = 'xl/' + target.replace(/^\.?\//, '');
+ sheetMap[name] = target;
+ if (/^\d{6}$/.test(name)) monthSheetNames.push(name);
+ }
+ monthSheetNames.sort();
 }
 
-function processAllMonthSheets(monthSheets) {
- const allSitesSet = new Set();
- for (const ws of monthSheets) {
- for (const s of extractSites(ws)) allSitesSet.add(s);
- }
- const allSites = [...allSitesSet].sort((a, b) => a.localeCompare(b, 'ja'));
- const resolved = resolveMappings(allSites);
- colorPlan = buildColorPlan(resolved.byClient);
- for (const ws of monthSheets) {
- applyColors(ws);
+async function parseSharedStrings() {
+ sharedStrings = [];
+ const f = zip.file('xl/sharedStrings.xml');
+ if (!f) return;
+ const xml = await f.async('string');
+ for (const m of xml.matchAll(/<si>([\s\S]*?)<\/si>/g)) {
+ const texts = [...m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(x => decodeXml(x[1]));
+ sharedStrings.push(texts.join(''));
  }
 }
 
-function previewSheet(name) {
- currentSheetName = name;
- const ws = workbook.getWorksheet(name);
- currentSites = extractSites(ws);
- const resolved = resolveMappings(currentSites);
- unmapped = resolved.unmapped;
- renderStep3(resolved);
- document.getElementById('step3').hidden = false;
-}
-
-function extractSites(ws) {
+async function extractSites(sheetName) {
+ const path = sheetMap[sheetName];
+ const xml = await zip.file(path).async('string');
  const set = new Set();
- for (let r = SCAN_ROW_START; r <= SCAN_ROW_END; r++) {
- for (let c = SCAN_COL_START; c <= SCAN_COL_END; c++) {
- const t = cellText(ws.getCell(r, c)).trim();
- if (t && !SKIP_VALUES.has(t)) set.add(t);
+ for (const m of xml.matchAll(/<c r="([A-Z]+)(\d+)"([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+ const colN = colToNum(m[1]), rowN = parseInt(m[2]);
+ if (colN < SCAN_COL_START || colN > SCAN_COL_END || rowN < SCAN_ROW_START || rowN > SCAN_ROW_END) continue;
+ if (m[3].includes('t="s"')) {
+ const v = (m[4] || '').match(/<v>(\d+)<\/v>/);
+ if (v) {
+ const s = (sharedStrings[parseInt(v[1])] || '').trim();
+ if (s && !SKIP_VALUES.has(s)) set.add(s);
+ }
  }
  }
  return [...set].sort((a, b) => a.localeCompare(b, 'ja'));
@@ -337,64 +303,144 @@ function extractSites(ws) {
 
 function resolveMappings(sites) {
  const byClient = {};
- const unmapped = [];
+ const unmappedArr = [];
  for (const site of sites) {
  const key = normalizeKey(site);
  const client = (PRESET.get(key) || userMappings[key] || '').trim();
- if (!client) {
- unmapped.push(site);
- } else {
- if (!byClient[client]) byClient[client] = [];
- byClient[client].push(site);
+ if (!client) unmappedArr.push(site);
+ else { (byClient[client] = byClient[client] || []).push(site); }
  }
- }
- return { byClient, unmapped };
+ return { byClient, unmapped: unmappedArr };
 }
 
 function buildColorPlan(byClient) {
  const plan = {};
- const multi = Object.entries(byClient).filter(([, sites]) => sites.length >= 2);
+ const multi = Object.entries(byClient).filter(([, s]) => s.length >= 2);
  multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+ const M = multi.length;
  multi.forEach(([client, sites], idx) => {
- const hue = HUES[idx % HUES.length];
- const sortedSites = [...sites].sort((a, b) => a.localeCompare(b, 'ja'));
- sortedSites.forEach((site, i) => {
- const l = LIGHTNESS_STEPS[i % LIGHTNESS_STEPS.length];
- plan[site] = {
- client, hue, lightness: l,
- hex: hslToHex(hue, SATURATION, l),
- argb: hslToARGB(hue, SATURATION, l)
- };
+ const hue = M > 0 ? Math.round((360 / M) * idx) : 0;
+ const sorted = [...sites].sort((a, b) => a.localeCompare(b, 'ja'));
+ const N = sorted.length;
+ sorted.forEach((site, i) => {
+ const l = N === 1 ? 72 : Math.round(80 - (30 * i / (N - 1)));
+ plan[site] = { client, hue, lightness: l, hex: hslToHex(hue, SATURATION, l), argb: hslToARGB(hue, SATURATION, l) };
  });
  });
  return plan;
 }
 
-function applyColors(ws) {
- for (let r = SCAN_ROW_START; r <= SCAN_ROW_END; r++) {
- for (let c = SCAN_COL_START; c <= SCAN_COL_END; c++) {
- const cell = ws.getCell(r, c);
- const t = cellText(cell).trim();
- const p = (t && !SKIP_VALUES.has(t)) ? colorPlan[t] : null;
- if (p) {
- cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: p.argb } };
- } else {
- try {
- cell.fill = null;
- } catch (e) {
- cell.fill = { type: 'pattern', pattern: 'none' };
+async function processAllMonthSheets() {
+ const allSet = new Set();
+ for (const name of monthSheetNames) {
+ for (const s of await extractSites(name)) allSet.add(s);
  }
+ const allSites = [...allSet].sort((a, b) => a.localeCompare(b, 'ja'));
+ const resolved = resolveMappings(allSites);
+ colorPlan = buildColorPlan(resolved.byClient);
+
+ let stylesXml = await zip.file('xl/styles.xml').async('string');
+ const fillCount = parseInt(stylesXml.match(/<fills count="(\d+)">/)[1]);
+ const xfsMatch = stylesXml.match(/<cellXfs count="(\d+)">([\s\S]*?)<\/cellXfs>/);
+ const xfCount = parseInt(xfsMatch[1]);
+ const xfList = [...xfsMatch[2].matchAll(/<xf [^>]*?\/>|<xf [^>]*?>[\s\S]*?<\/xf>/g)].map(x => x[0]);
+
+ const newFills = [];
+ const fillIdMap = {};
+ function getFillId(argb) {
+ if (argb === null) return 0;
+ if (fillIdMap[argb] !== undefined) return fillIdMap[argb];
+ const id = fillCount + newFills.length;
+ newFills.push(argb); fillIdMap[argb] = id; return id;
  }
+ const newXfs = [];
+ const xfCache = {};
+ function getNewXf(origS, fillId) {
+ const key = origS + '_' + fillId;
+ if (xfCache[key] !== undefined) return xfCache[key];
+ let base = xfList[origS] || '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>';
+ let nx = base.replace(/ applyFill="\d+"/, '').replace(/fillId="\d+"/, `fillId="${fillId}"`);
+ if (nx.endsWith('/>')) nx = nx.slice(0, -2) + ' applyFill="1"/>';
+ else nx = nx.replace('>', ' applyFill="1">');
+ const ns = xfCount + newXfs.length;
+ newXfs.push(nx); xfCache[key] = ns; return ns;
  }
+
+ for (const name of monthSheetNames) {
+ const path = sheetMap[name];
+ let xml = await zip.file(path).async('string');
+ xml = xml.replace(/<c r="([A-Z]+)(\d+)"([^>]*?)(\/>|>([\s\S]*?)<\/c>)/g,
+ (full, col, row, attrs, tail, inner) => {
+ const colN = colToNum(col), rowN = parseInt(row);
+ if (colN < SCAN_COL_START || colN > SCAN_COL_END || rowN < SCAN_ROW_START || rowN > SCAN_ROW_END) return full;
+ let site = null;
+ if (attrs.includes('t="s"')) {
+ const v = (inner || '').match(/<v>(\d+)<\/v>/);
+ if (v) site = sharedStrings[parseInt(v[1])];
  }
+ if (site) site = site.trim();
+ const argb = (site && colorPlan[site]) ? colorPlan[site].argb : null;
+ const sM = attrs.match(/s="(\d+)"/);
+ const origS = sM ? parseInt(sM[1]) : 0;
+ const fillId = getFillId(argb);
+ const newS = getNewXf(origS, fillId);
+ const newAttrs = sM ? attrs.replace(/s="\d+"/, `s="${newS}"`) : attrs + ` s="${newS}"`;
+ return `<c r="${col}${row}"${newAttrs}${tail}`;
+ });
+ zip.file(path, xml);
+ }
+
+ const fillXml = newFills.map(a => `<fill><patternFill patternType="solid"><fgColor rgb="${a}"/><bgColor indexed="64"/></patternFill></fill>`).join('');
+ stylesXml = stylesXml
+ .replace(/<fills count="\d+">/, `<fills count="${fillCount + newFills.length}">`)
+ .replace('</fills>', fillXml + '</fills>')
+ .replace(/<cellXfs count="\d+">/, `<cellXfs count="${xfCount + newXfs.length}">`)
+ .replace('</cellXfs>', newXfs.join('') + '</cellXfs>');
+ zip.file('xl/styles.xml', stylesXml);
+}
+
+function buildSheetSelector() {
+ if (monthSheetNames.length === 0) {
+ showToast('月別シート（202604のような6桁数字名）が見つかりません', true);
+ return;
+ }
+ const sel = document.getElementById('sheetSelect');
+ sel.innerHTML = '';
+ monthSheetNames.forEach(name => {
+ const o = document.createElement('option');
+ o.value = name;
+ o.textContent = name.slice(0, 4) + '年' + parseInt(name.slice(4)) + '月 (' + name + ')';
+ sel.appendChild(o);
+ });
+ const def = pickDefaultSheet(monthSheetNames);
+ sel.value = def;
+ sel.onchange = () => previewSheet(sel.value);
+ document.getElementById('step2').hidden = false;
+ previewSheet(def);
+}
+
+function pickDefaultSheet(names) {
+ const now = new Date();
+ const ym = now.getFullYear().toString() + String(now.getMonth() + 1).padStart(2, '0');
+ if (names.includes(ym)) return ym;
+ const future = names.filter(n => n >= ym);
+ if (future.length > 0) return future[0];
+ return names[0];
+}
+
+async function previewSheet(name) {
+ currentSheetName = name;
+ currentSites = await extractSites(name);
+ const resolved = resolveMappings(currentSites);
+ unmapped = resolved.unmapped;
+ renderStep3(resolved);
+ document.getElementById('step3').hidden = false;
 }
 
 function renderStep3(resolved) {
  const total = currentSites.length;
- const colored = Object.keys(colorPlan).length;
- const noColor = Object.entries(resolved.byClient)
- .filter(([, s]) => s.length < 2)
- .reduce((a, [, s]) => a + s.length, 0);
+ const colored = currentSites.filter(s => colorPlan[s]).length;
+ const noColor = Object.entries(resolved.byClient).filter(([, s]) => s.length < 2).reduce((a, [, s]) => a + s.length, 0);
  const unmappedCount = unmapped.length;
 
  document.getElementById('statRow').innerHTML = `
@@ -411,17 +457,10 @@ function renderStep3(resolved) {
  } else {
  ub.hidden = false;
  ul.innerHTML = '';
- const allClients = [...new Set([
- ...Object.keys(PRESET_RAW),
- ...Object.values(userMappings)
- ])].filter(Boolean).sort();
+ const allClients = [...new Set([...Object.keys(PRESET_RAW), ...Object.values(userMappings)])].filter(Boolean).sort();
  const dlId = 'clientDL';
  let dl = document.getElementById(dlId);
- if (!dl) {
- dl = document.createElement('datalist');
- dl.id = dlId;
- document.body.appendChild(dl);
- }
+ if (!dl) { dl = document.createElement('datalist'); dl.id = dlId; document.body.appendChild(dl); }
  dl.innerHTML = allClients.map(c => `<option value="${escapeHtml(c)}">`).join('');
 
  unmapped.forEach(site => {
@@ -433,21 +472,21 @@ function renderStep3(resolved) {
  inp.placeholder = '取引先名（空欄可）';
  inp.setAttribute('list', dlId);
  inp.value = userMappings[normalizeKey(site)] || '';
- inp.onchange = () => {
+ inp.onchange = async () => {
  const key = normalizeKey(site);
  const val = inp.value.trim();
- if (val) userMappings[key] = val;
- else delete userMappings[key];
+ if (val) userMappings[key] = val; else delete userMappings[key];
  saveUserMappings(userMappings);
- const monthSheets = workbook.worksheets.filter(ws => /^\d{6}$/.test(ws.name));
- processAllMonthSheets(monthSheets);
- previewSheet(currentSheetName);
+ busyEl.style.display = 'block';
+ try {
+ await reloadAndProcess();
+ await previewSheet(currentSheetName);
+ } finally { busyEl.style.display = 'none'; }
  };
  ul.appendChild(lbl);
  ul.appendChild(inp);
  });
  }
-
  renderPreview(resolved);
 }
 
@@ -465,7 +504,8 @@ function renderPreview(resolved) {
  const sorted = [...sites].sort((a, b) => a.localeCompare(b, 'ja'));
  sorted.forEach((site, i) => {
  const p = colorPlan[site];
- html += `<tr>${i === 0 ? `<td rowspan="${sorted.length}">${escapeHtml(client)}</td>` : ''}<td>${escapeHtml(site)}</td><td><span class="swatch" style="background:${p.hex}"></span><code style="font-size:0.78rem">${p.hex}</code></td></tr>`;
+ const cell = p ? `<span class="swatch" style="background:${p.hex}"></span><code style="font-size:0.78rem">${p.hex}</code>` : '—';
+ html += `<tr>${i === 0 ? `<td rowspan="${sorted.length}">${escapeHtml(client)}</td>` : ''}<td>${escapeHtml(site)}</td><td>${cell}</td></tr>`;
  });
  });
  html += '</tbody></table>';
@@ -474,46 +514,19 @@ function renderPreview(resolved) {
  html += `<h4 style="font-size:0.9rem;font-weight:500;margin:1rem 0 0.5rem">色なし（1社1現場）</h4>`;
  html += `<p style="font-size:0.85rem;color:var(--sub)">${single.map(([c, s]) => escapeHtml(s[0]) + '（' + escapeHtml(c) + '）').join('、')}</p>`;
  }
- if (multi.length > HUES.length) {
- html += `<p style="color:var(--accent);font-size:0.85rem;margin-top:1rem">⚠ 取引先が${multi.length}社あり、色相パレット（${HUES.length}色）を超えています。一部の取引先で色相が循環し、別社と似た色になる可能性があります。</p>`;
+ if (multi.length > 20) {
+ html += `<p style="color:var(--accent);font-size:0.85rem;margin-top:1rem">⚠ 取引先が${multi.length}社あり、色相が近接して見分けにくくなる場合があります。</p>`;
  }
  document.getElementById('preview').innerHTML = html;
 }
 
-function cleanupBeforeWrite(wb) {
- let removedCount = 0;
- wb.eachSheet(ws => {
- try {
- if (ws.dataValidations && ws.dataValidations.model) {
- const model = ws.dataValidations.model;
- for (const range of Object.keys(model)) {
- if (/XF[A-Z]/i.test(range) || /:\$?[A-Z]{3,}\$?\d/.test(range)) {
- delete model[range];
- removedCount++;
- }
- }
- }
- if (ws._dataValidations && ws._dataValidations.model) {
- const m = ws._dataValidations.model;
- for (const range of Object.keys(m)) {
- if (/XF[A-Z]/i.test(range) || /:\$?[A-Z]{3,}\$?\d/.test(range)) {
- delete m[range];
- removedCount++;
- }
- }
- }
- } catch (e) {
- console.warn('cleanup warning on sheet', ws.name, e);
- }
- });
- if (removedCount > 0) console.log(`cleanupBeforeWrite: removed ${removedCount} unsafe data validations`);
-}
-
 document.getElementById('downloadBtn').onclick = async () => {
  try {
- cleanupBeforeWrite(workbook);
- const buf = await workbook.xlsx.writeBuffer();
- const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+ const blob = await zip.generateAsync({
+ type: 'blob',
+ compression: 'DEFLATE',
+ mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+ });
  saveAs(blob, `配色番_${currentSheetName}.xlsx`);
  showToast('✓ ダウンロードしました');
  } catch (err) {
