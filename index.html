@@ -93,7 +93,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
  <span class="sub">Haishokuban</span>
  </div>
  <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
- <p class="ver">v0.4 / ATS 社内用</p>
+ <p class="ver">v0.6 / ATS 社内用</p>
 </header>
 
 <section id="step1">
@@ -107,7 +107,8 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
 </section>
 
 <section id="step2" hidden>
- <div class="step"><span class="step-no">STEP 02</span><h2>月を選ぶ</h2></div>
+ <div class="step"><span class="step-no">STEP 02</span><h2>プレビューする月を選ぶ</h2></div>
+ <p style="font-size:0.85rem;color:var(--sub);margin-bottom:0.6rem">色はすべての月に自動でつきます。ここは確認用に1ヶ月だけ表示する選択です。</p>
  <select id="sheetSelect"></select>
 </section>
 
@@ -272,6 +273,9 @@ function showSheetSelect() {
  return;
  }
  monthSheets.sort((a, b) => a.name.localeCompare(b.name));
+
+ processAllMonthSheets(monthSheets);
+
  const sel = document.getElementById('sheetSelect');
  sel.innerHTML = '';
  monthSheets.forEach(ws => {
@@ -280,20 +284,42 @@ function showSheetSelect() {
  o.textContent = ws.name.slice(0, 4) + '年' + parseInt(ws.name.slice(4)) + '月 (' + ws.name + ')';
  sel.appendChild(o);
  });
- sel.value = monthSheets[monthSheets.length - 1].name;
- sel.onchange = () => processSheet(sel.value);
+ const def = pickDefaultSheet(monthSheets);
+ sel.value = def;
+ sel.onchange = () => previewSheet(sel.value);
  document.getElementById('step2').hidden = false;
- processSheet(sel.value);
+ previewSheet(def);
 }
 
-function processSheet(name) {
+function pickDefaultSheet(monthSheets) {
+ const now = new Date();
+ const ym = now.getFullYear().toString() + String(now.getMonth() + 1).padStart(2, '0');
+ const exact = monthSheets.find(ws => ws.name === ym);
+ if (exact) return exact.name;
+ const future = monthSheets.filter(ws => ws.name >= ym);
+ if (future.length > 0) return future[0].name;
+ return monthSheets[0].name;
+}
+
+function processAllMonthSheets(monthSheets) {
+ const allSitesSet = new Set();
+ for (const ws of monthSheets) {
+ for (const s of extractSites(ws)) allSitesSet.add(s);
+ }
+ const allSites = [...allSitesSet].sort((a, b) => a.localeCompare(b, 'ja'));
+ const resolved = resolveMappings(allSites);
+ colorPlan = buildColorPlan(resolved.byClient);
+ for (const ws of monthSheets) {
+ applyColors(ws);
+ }
+}
+
+function previewSheet(name) {
  currentSheetName = name;
  const ws = workbook.getWorksheet(name);
  currentSites = extractSites(ws);
  const resolved = resolveMappings(currentSites);
  unmapped = resolved.unmapped;
- colorPlan = buildColorPlan(resolved.byClient);
- applyColors(ws);
  renderStep3(resolved);
  document.getElementById('step3').hidden = false;
 }
@@ -345,10 +371,6 @@ function buildColorPlan(byClient) {
 }
 
 function applyColors(ws) {
- // 処理範囲（行12-233、列10-40）はすべて配色番のルールに従う：
- // - マッピング済み現場 → 該当色
- // - それ以外（休み「-」、内勤、研修、未マッピング、空欄） → 色を明示的にクリア
- // これをしないと、元のExcelで手作業塗りされた色が残ってしまう
  for (let r = SCAN_ROW_START; r <= SCAN_ROW_END; r++) {
  for (let c = SCAN_COL_START; c <= SCAN_COL_END; c++) {
  const cell = ws.getCell(r, c);
@@ -357,7 +379,11 @@ function applyColors(ws) {
  if (p) {
  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: p.argb } };
  } else {
+ try {
+ cell.fill = null;
+ } catch (e) {
  cell.fill = { type: 'pattern', pattern: 'none' };
+ }
  }
  }
  }
@@ -413,7 +439,9 @@ function renderStep3(resolved) {
  if (val) userMappings[key] = val;
  else delete userMappings[key];
  saveUserMappings(userMappings);
- processSheet(currentSheetName);
+ const monthSheets = workbook.worksheets.filter(ws => /^\d{6}$/.test(ws.name));
+ processAllMonthSheets(monthSheets);
+ previewSheet(currentSheetName);
  };
  ul.appendChild(lbl);
  ul.appendChild(inp);
