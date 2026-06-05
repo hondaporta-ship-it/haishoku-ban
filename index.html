@@ -89,7 +89,7 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
     <span class="sub">Haishokuban</span>
   </div>
   <p class="tagline">シフト表を、安全な色付けに自動変換する</p>
-  <p class="ver">v0.9 / ATS 社内用</p>
+  <p class="ver">v0.10 / ATS 社内用</p>
 </header>
 
 <section id="step1">
@@ -106,10 +106,12 @@ footer{margin-top:3rem;padding-top:1rem;border-top:0.5px solid var(--line);font-
 <section id="step2" hidden>
   <div class="step"><span class="step-no">STEP 02</span><h2>色の付け方を選ぶ</h2></div>
   <div class="mode-box">
-    <label class="mode-opt"><input type="radio" name="colorMode" value="gradient" checked>
-      <span><strong>会社でまとめる</strong><br><span class="mode-desc">同じ会社は同系色の濃淡。例：中村系はぜんぶピンクの濃い・薄い</span></span></label>
+    <label class="mode-opt"><input type="radio" name="colorMode" value="balanced" checked>
+      <span><strong>いいとこ取り（おすすめ）</strong><br><span class="mode-desc">同じ会社の中も色を変えつつ、別会社とも被りにくく。中村Aは青紫、中村A2は紫…と少しずつ変化</span></span></label>
+    <label class="mode-opt"><input type="radio" name="colorMode" value="gradient">
+      <span><strong>会社でまとめる</strong><br><span class="mode-desc">同じ会社は同系色の濃淡。例：中村系はぜんぶ紫の濃い・薄い</span></span></label>
     <label class="mode-opt"><input type="radio" name="colorMode" value="vivid">
-      <span><strong>現場をくっきり分ける</strong><br><span class="mode-desc">同じ会社でも色をバラバラに。例：中村A=赤、中村A2=青、中村2=緑</span></span></label>
+      <span><strong>現場をくっきり分ける</strong><br><span class="mode-desc">同じ会社でも色をハッキリ別に。ただし別会社と色がかぶることがある</span></span></label>
   </div>
   <p style="font-size:0.85rem;color:var(--sub);margin:1rem 0 0.4rem">プレビューする月（色はすべての月につきます）</p>
   <select id="sheetSelect"></select>
@@ -217,7 +219,7 @@ let sheetMap = {};          // シート名 → xl/worksheets/sheetN.xml
 let monthSheetNames = [];   // ['202604', ...]
 let sharedStrings = [];
 let colorPlan = null;       // { 現場名: {client,hue,lightness,hex,argb} } ← 表示中の月のぶん
-let colorMode = 'gradient'; // 'gradient'（会社でまとめる）| 'vivid'（現場をくっきり）
+let colorMode = 'balanced'; // 'balanced'（いいとこ取り）| 'gradient'（会社でまとめる）| 'vivid'（現場をくっきり）
 let hueOf = {};             // { 会社名: 色相 } ← 年間で固定（月をまたいでも色を一定に）
 let currentSheetName = null;
 let currentSites = [];
@@ -372,6 +374,24 @@ function resolveMappings(sites) {
 function buildColorPlan(byClient, mode, hueMap) {
   const plan = {};
   const multi = Object.entries(byClient).filter(([c, s]) => s.length >= 2 && !EVENT_CLIENTS.has(c));
+  multi.sort((a, b) => a[0].localeCompare(b[0], 'ja'));
+
+  if (mode === 'balanced') {
+    // いいとこ取り：その月の全現場を会社順→会社内順に並べ、色相環(360°)を均等割り。
+    // 同じ会社は隣り合う色相に固まる（系統が残る）／別会社とも色相がずれる（被りにくい）／全現場が必ず違う色。
+    const all = [];
+    multi.forEach(([client, sites]) => {
+      [...sites].sort((a, b) => a.localeCompare(b, 'ja')).forEach(site => all.push({ client, site }));
+    });
+    const T = all.length;
+    all.forEach((o, gi) => {
+      const hue = T > 0 ? Math.round((360 / T) * gi) : 0;
+      const sat = 62, l = 72;
+      plan[o.site] = { client: o.client, hue, lightness: l, hex: hslToHex(hue, sat, l), argb: hslToARGB(hue, sat, l) };
+    });
+    return plan;
+  }
+
   multi.forEach(([client, sites]) => {
     const sorted = [...sites].sort((a, b) => a.localeCompare(b, 'ja'));
     const N = sorted.length;
@@ -644,7 +664,8 @@ document.querySelectorAll('input[name="colorMode"]').forEach(radio => {
     try {
       await reloadAndProcess();
       await previewSheet(currentSheetName);
-      showToast(colorMode === 'vivid' ? '✓ 現場をくっきり分ける色にしました' : '✓ 会社でまとめる色にしました');
+      const labels = { balanced: 'いいとこ取り', gradient: '会社でまとめる', vivid: '現場をくっきり分ける' };
+      showToast('✓ ' + labels[colorMode] + 'の色にしました');
     } finally { busyEl.style.display = 'none'; }
   };
 });
